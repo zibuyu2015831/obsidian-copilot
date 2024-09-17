@@ -580,7 +580,13 @@ export default class CopilotPlugin extends Plugin {
     eventSubtype?: string,
     checkSelectedText = true
   ) {
-    const selectedText = await editor.getSelection();
+    // const selectedText = await editor.getSelection();
+
+    let selectedText = await editor.getSelection();
+
+    if (selectedText === "") {
+      selectedText = this.getCurrentParagraph();
+    }
 
     const isChatWindowActive = this.app.workspace.getLeavesOfType(CHAT_VIEWTYPE).length > 0;
 
@@ -900,5 +906,46 @@ export default class CopilotPlugin extends Plugin {
     }
 
     return messages;
+  }
+
+   getCurrentParagraph():string {
+
+    // Use getActiveViewOfType to obtain the current Markdown editor view.
+    const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+    if (!markdownView) {
+      console.log("No active Markdown view found.");
+      return '';
+    }
+
+    const editor = markdownView.editor;
+
+    // Obtain the cursor position.
+    const cursor = editor.getCursor();
+    const lineNumber = cursor.line;
+
+    // Get all lines of the document.
+    const allLines = editor.getValue().split('\n');
+
+    // 查找当前段落
+    let startLine = lineNumber;
+    let endLine = lineNumber;
+
+    // Search for the starting line of the paragraph upwards (an empty line or the beginning of the file indicates the start of a paragraph).
+    while (startLine > 0 && allLines[startLine - 1].trim() !== '') {
+      startLine--;
+    }
+
+    // Search for the ending line of the paragraph downwards (an empty line or the end of the file indicates the end of a paragraph).
+    while (endLine < allLines.length - 1 && allLines[endLine + 1].trim() !== '') {
+      endLine++;
+    }
+
+    // Get the content of a paragraph.
+    const paragraph = allLines.slice(startLine, endLine + 1).join('\n');
+
+    return paragraph
+
+    // console.log("Current paragraph:", paragraph);
   }
 }
